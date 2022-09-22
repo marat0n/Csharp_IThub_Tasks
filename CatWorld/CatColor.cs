@@ -1,4 +1,4 @@
-﻿namespace SomeTasks;
+﻿namespace CatWorld;
 
 /// <summary>
 /// SuperGradient is a gradient of all existing colors

@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace SomeTasks;
+namespace CatWorld;
 
 public sealed record Percent
 {

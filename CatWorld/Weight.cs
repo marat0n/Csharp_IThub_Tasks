@@ -1,4 +1,4 @@
-﻿namespace SomeTasks;
+﻿namespace CatWorld;
 
 public sealed record Weight
 {
