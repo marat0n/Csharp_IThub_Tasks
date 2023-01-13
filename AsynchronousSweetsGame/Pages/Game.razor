@@ -1,0 +1,153 @@
+﻿@page "/"
+
+<PageTitle>Asynchronous Sweets</PageTitle>
+
+<div class="score">
+	Score: @_score
+</div>
+
+<div class="seconds">
+	Seconds: @_secondsIndicator
+</div>
+
+<div class="game">
+	@foreach (var box in GameArea)
+	{
+		<div class="box @(box.Type.Name)"
+		     style="transform: translate(@(box.Position.X * 30)px, @(box.Position.Y * 30)px)"
+		     @onclick="@box.Type.Action"
+		></div>
+	}
+</div>
+
+
+@code {
+
+	    private const int MaxBombsCounter = 5;
+	
+	private sealed record Coord(int X, int Y);
+
+	private sealed record Box(BoxType Type, Coord Position)
+	{
+		public Coord Position { get; set; } = Position;
+		public BoxType Type { get; set; } = Type;
+	}
+
+	private abstract class BoxType
+	{
+		public static BoxType Bomb => new BombVariant("bomb", GameOver);
+		public static BoxType Sweet => new SweetVariant("sweet", LevelUp);
+
+		private BoxType(string name, Func<Task> action)
+		{
+			Name = name;
+			Action = action;
+		}
+		
+		public readonly Func<Task> Action;
+
+		public readonly string Name;
+		
+		private sealed class BombVariant : BoxType
+		{
+			public BombVariant(string name, Func<Task> action) : base(name, action)
+			{
+			}
+		}
+		
+		private sealed class SweetVariant : BoxType
+		{
+			public SweetVariant(string name, Func<Task> action) : base(name, action)
+			{
+			}
+		}
+	}
+
+	private static readonly Coord Size = new(20, 20);
+
+	private static readonly List<Box> GameArea = new();
+
+	private static readonly Box Sweet = new(BoxType.Sweet, new Coord(0, 0));
+
+	private static int _score;
+
+	private static int _secondsIndicator = 15;
+
+	private static readonly Random Random = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		
+		var generateTask = GenerateBombsAndSweet();
+
+		await generateTask;
+		var timer = new System.Timers.Timer(1000);
+		timer.Elapsed += async (_, _) =>
+		{
+			_secondsIndicator--;
+			StateHasChanged();
+			if (_secondsIndicator != 1) return;
+			timer.AutoReset = false;
+			await GameOver();
+		};
+		timer.AutoReset = true;
+		timer.Enabled = true;
+	}
+
+	private static async Task GenerateBombsAndSweet()
+	{
+		await PlaceBombs();
+		await PlaceSweet();
+	}
+
+	private static async Task PlaceBombs()
+	{
+		await Task.Run(() =>
+		{
+			for (var bombIndex = 0; bombIndex < MaxBombsCounter; bombIndex++)
+			{
+				GameArea.Add(
+					item: new Box(
+						Type: BoxType.Bomb,
+						Position: new Coord(Random.Next(Size.X), Random.Next(Size.Y)))
+					);
+			}
+		});
+	}
+
+	private static bool _sweetPlaced;
+	private static async Task PlaceSweet()
+	{
+		await Task.Run(() =>
+		{
+			if (!_sweetPlaced)
+			{
+				GameArea.Add(Sweet);
+				_sweetPlaced = true;
+			}
+			Sweet.Position = new Coord(Random.Next(Size.X), Random.Next(Size.Y));
+		});
+	}
+
+	private static async Task ClearGameArea()
+	{
+		await Task.Run(() =>
+		{
+			GameArea.Clear();
+			_sweetPlaced = false;
+		});
+	}
+
+	private static async Task LevelUp()
+	{
+		await GenerateBombsAndSweet();
+		_score++;
+	}
+
+	private static async Task GameOver()
+	{
+		await ClearGameArea();
+	}
+
+}

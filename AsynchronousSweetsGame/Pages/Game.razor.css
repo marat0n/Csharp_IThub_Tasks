@@ -1,0 +1,21 @@
+.game {
+    border: 1px solid black;
+    position: relative;
+    width: calc(30px * 20 + 2px);
+    height: calc(30px * 20 + 2px);
+}
+
+.box {
+    width: 30px;
+    height: 30px;
+    display: inline-block;
+    position: absolute;
+}
+    
+    .box.bomb {
+        background: red;
+    }
+    
+    .box.sweet {
+        background: yellow;
+    }
